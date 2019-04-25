@@ -24,8 +24,7 @@ shinyUI(fluidPage(sidebarLayout(
   ),
 
   mainPanel(
-
-    
+    dataTableOutput("test")
   )
   
 ))) 
