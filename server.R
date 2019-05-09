@@ -1,10 +1,19 @@
+# To do:
+# - What happens when some of the folders don't have a given .csv?  How to warn user of that or only show reports that are in all samples?
+# - Add text explaining what shit does
+# - put on web (eg shinyapps.io)
+# - share with Nicole and ask her to try it
+# - would be nice if Q-value colorbar was the same across all pages of the plot
+# - add an input for how many compounds to show per page of plot
+
+
 library(shiny)
 library(shinyFiles)
 library(tidyverse)
 library(glue)
 library(chemhelper)
-home = "~/Documents/ia-batch-tools" #for testing.  Change to "~" for production
-# home = "~"
+# home = "~/Documents/ia-batch-tools" #for testing.  Change to "~" for production
+home = "~"
 shinyServer(function(input, output, session) {
   
   shinyDirChoose(input, "directory", roots = c(home = home))
@@ -85,9 +94,70 @@ shinyServer(function(input, output, session) {
       bind_rows(.id = "sample")
   })
   
+  diagnostic_df <- reactive({
+    df <- data() %>%
+      janitor::clean_names() %>% 
+      #set zeroes to NAs
+      mutate_if(is.double, ~ifelse(. == 0, NA, .)) %>% 
+      #calculate deviations from expected RT
+      mutate(rt_dev = r_time_min - expect_min) %>% 
+      group_by(compound) %>% 
+      #remove compounds that don't appear in any files
+      filter(!all(is.na(r_time_min))) %>%
+      #calculate standard deviation within compound
+      mutate(rt_sd = sd(r_time_min, na.rm = TRUE)) %>% 
+      ungroup() %>% 
+      # reorder compounds based on their standard deviation so most problematic ones show up in first page
+      mutate(no = as.factor(no) %>% fct_reorder(rt_sd, .desc = TRUE)) %>% 
+      mutate(compound_trunc = glue("({no}) {str_trunc(compound, 15)}"))
+    
+    nperpage <- 20 #make input for this later?
+    #figure out pages for plots
+    lvls <-
+      #get unique levels of compound number in order
+      tibble(no = fct_unique(fct_drop(df$no))) %>%
+      #add a column that puts them in groups of nperpage (currently 20)
+      mutate(page = rep(1:ceiling(n()/nperpage), each = nperpage, length.out = n()))
+    #join that to the original data so there is a grouping variable called "page"
+    full_join(df, lvls) %>%
+      arrange(desc(rt_sd)) %>% 
+      mutate(rownum = row_number())
+  })
   
-  output$test <- renderDataTable({
-    data()
+  # output$test <- renderDataTable({
+  #   head(test())
+  # })
+  
+  output$diagnostic_plot <- renderPlotly({
+    p <- ggplot(diagnostic_df() %>%
+             #only plot one page at a time
+             filter(page == input$page),
+           aes(x = rt_dev,
+               # y = str_trunc(compound, width = 15),
+               y = compound_trunc,
+               label = sample,
+               key = rownum,
+               color = q_val)) +
+      geom_jitter(alpha = 0.5, width = 0, height = 0.2) +
+      scale_color_viridis_c(option = "C") +
+      coord_cartesian(xlim = c(-0.5, 0.5)) +
+      labs(x = "deviation from expected RT", y = "(No.) Compound",
+           # title = "Compounds sorted by standard deviation of retention time",
+           color = "Q")
+      ggplotly(p)
+  })
+  
+  observeEvent(diagnostic_df(), {
+    updateNumericInput(session, "page", max = max(diagnostic_df()$page))
+  })
+  
+  # display data for selected points in table format
+  output$brush <- renderDataTable({
+    d <- event_data("plotly_selected")
+    diagnostic_df() %>%
+      filter(rownum %in% d$key) %>% 
+      select(sample, no. = no, compound, RT = r_time_min, `Expected RT` = expect_min, `RT sd` = rt_sd, q_val)
+    # d
   })
   
 })
