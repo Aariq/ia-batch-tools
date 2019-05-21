@@ -18,7 +18,6 @@ shinyUI(fluidPage(sidebarLayout(
     checkboxGroupInput("sample_choice", "Choose Samples"), 
     # verbatimTextOutput("chosensamples"), 
     
-    
     # Third, choose which (if there is more than one) .csv file name to import
     h4("4. Choose which report to analyze"),
     p("You may have used multiple methods on a file, each producing its own .csv file. Currently, you must choose a .csv file present in all of the samples you selected above or it will crash."),
@@ -31,10 +30,29 @@ shinyUI(fluidPage(sidebarLayout(
   mainPanel(
     # dataTableOutput("test"),
     # plotOutput("diagnostic_plot"),
-    h2("Compounds sorted by standard deviation of retention time"),
-    plotlyOutput("diagnostic_plot"),
-    numericInput("page", "Page", min = 1, max = 10, value = 1, step = 1, width = "75px"),
-    dataTableOutput("brush")
+    
+    
+    tabsetPanel(type = "tabs",
+                  #this tab would have the RT deviation plotly plot and interactive table
+                tabPanel("RT",
+                         h2("Compounds sorted by standard deviation of retention time"),
+                         p("Hover over points to view details and select points to generate a table."),
+                         plotlyOutput("diagnostic_plot"),
+                         numericInput("page", "Page", min = 1, max = 10, value = 1, step = 1, width = "75px"),
+                         dataTableOutput("brush")))
+                  #this tab would have a simple table of compounds sorted by mean Q-value
+    #             tabPanel("Q-Value", diagnostics %>% arrange(q_value)),
+                  #this tab would have some diagnostics about peak width?
+    #             tabPanel("Width", diagnostics %>% arrange(desc(sd_width))),
+                  #this tab would have some preliminary outlier diagnostics just to catch errors?
+    #             tabPanel("Outliers", pcaoutlierplot, HDoutliersoutput)
+                # )
+    
+    # h2("Compounds sorted by standard deviation of retention time"),
+    # p("Hover over points to view details and select points to generate a table."),
+    # plotlyOutput("diagnostic_plot"),
+    # numericInput("page", "Page", min = 1, max = 10, value = 1, step = 1, width = "75px"),
+    # dataTableOutput("brush")
   )
   
 ))) 
