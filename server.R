@@ -1,10 +1,11 @@
-# To do:
-# - What happens when some of the folders don't have a given .csv?  How to warn user of that or only show reports that are in all samples?
+# TODO:
+# - What happens when some of the folders don't have a given .csv?  How to warn user of that or only show reports that are in all samples?  Two options: 1) only display reports if they are in all the selected samples (or alternatively have them greyed out if that's possible), 2) when you click 'import' just skip over folders where the report doesn't exist
 # - Add text explaining what shit does
 # - put on web (eg shinyapps.io)
 # - share with Nicole and ask her to try it
 # - would be nice if Q-value colorbar was the same across all pages of the plot
 # - add an input for how many compounds to show per page of plot
+# - put things in tabs
 
 
 library(shiny)
@@ -12,17 +13,19 @@ library(shinyFiles)
 library(tidyverse)
 library(glue)
 library(chemhelper)
-# home = "~/Documents/ia-batch-tools" #for testing.  Change to "~" for production
-home = "~"
+library(plotly)
+home = "~/Documents/ia-batch-tools" #for testing.  Change to "~" for production
+# home = "~"
 shinyServer(function(input, output, session) {
   
   shinyDirChoose(input, "directory", roots = c(home = home))
   
   #sends to UI for debugging
-  output$directorypath <- renderPrint({
-    full_paths <- dir(parseDirPath(c(home = home), input$directory), full.names = TRUE)
-    full_paths
-  })
+  # output$directorypath <- renderPrint({
+  #   full_paths <- dir(parseDirPath(c(home = home), input$directory), full.names = TRUE)
+  #   full_paths
+  # })
+  
   # Save directory choice three ways:
   data_dir <- reactive({
     parseDirPath(c(home = home), input$directory)
@@ -69,9 +72,8 @@ shinyServer(function(input, output, session) {
   #Updating checkbox for .csv file name
   observe({
     # create options that are the file names plus the number of samples that have that file name
-    # df <- as.data.frame(table(reports))
-    # report_options <- glue("{df$reports} ({df$Freq})")
-    report_options <- unique(reports())
+    df <- as.data.frame(table(reports()))
+    report_options <- unique(reports()) %>% set_names(glue("{df[[1]]} ({df$Freq})"))
     
     #  makes it have no choices until you select a directory
     if (is.null(report_options))

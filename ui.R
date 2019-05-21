@@ -1,22 +1,27 @@
 library(shiny)
 library(shinyFiles)
 library(tidyverse)
+library(plotly)
 shinyUI(fluidPage(sidebarLayout(
   
   sidebarPanel(
+    h4("1. Save Reports in IonAnalytics"),
+    p('In IonAnalytics, after searching a file with a method, click the "Export" button on the Integration Report tab and save the .csv file in the default location (inside the .D folder) with the default filename.  Do this for all samples.'),
+    
     # First, choose a directory
-    h4("1. Select the data folder for an IonAnalytics project"),
+    h4("2. Select the data folder for an IonAnalytics project"),
     shinyDirButton("directory", "Folder select", "Please select a folder"),
     # verbatimTextOutput("directorypath"), #outputs chosen paths for debugging
     
     # Second, exclude any samples (folders).  By default they are all checked
-    h4("2. Choose which samples to include"),
+    h4("3. Choose which samples to include"),
     checkboxGroupInput("sample_choice", "Choose Samples"), 
     # verbatimTextOutput("chosensamples"), 
     
     
     # Third, choose which (if there is more than one) .csv file name to import
-    h4("3. Choose which report to analyze"),
+    h4("4. Choose which report to analyze"),
+    p("You may have used multiple methods on a file, each producing its own .csv file. Currently, you must choose a .csv file present in all of the samples you selected above or it will crash."),
     checkboxGroupInput("report_choice", "Choose a report"),
     
     # Fourth, submit and import those files!
