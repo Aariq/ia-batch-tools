@@ -1,11 +1,9 @@
 # TODO:
 # - What happens when some of the folders don't have a given .csv?  How to warn user of that or only show reports that are in all samples?  Two options: 1) only display reports if they are in all the selected samples (or alternatively have them greyed out if that's possible), 2) when you click 'import' just skip over folders where the report doesn't exist
-# - Add text explaining what shit does
 # - put on web (eg shinyapps.io)
 # - share with Nicole and ask her to try it
 # - would be nice if Q-value colorbar was the same across all pages of the plot
 # - add an input for how many compounds to show per page of plot
-# - put things in tabs
 
 
 library(shiny)
@@ -19,6 +17,8 @@ home = "~/Documents/ia-batch-tools" #for testing.  Change to "~" for production
 shinyServer(function(input, output, session) {
   
   hideTab("tabs", "RT")
+  hideTab("tabs", "Q Value")
+  hideTab("tabs", "Width")
   
   shinyDirChoose(input, "directory", roots = c(home = home))
   
@@ -98,9 +98,12 @@ shinyServer(function(input, output, session) {
       bind_rows(.id = "sample")
   })
   
-  # show tab after hitting go
+  # show tabs after hitting go
   observeEvent(input$go, {
     showTab(inputId = "tabs", target = "RT")
+    showTab(inputId = "tabs", target = "Q Value")
+    showTab("tabs", "Width")
+    
   })
   
   diagnostic_df <- reactive({
@@ -133,6 +136,28 @@ shinyServer(function(input, output, session) {
       mutate(rownum = row_number())
   })
   
+  output$qtable <- renderDataTable({
+    diagnostic_df() %>% 
+      select(sample, no, compound, q_val) %>% 
+      group_by(compound) %>% 
+      mutate(`Mean Q Value` = mean(q_val, na.rm = TRUE)) %>% 
+      filter(!is.na(q_val)) #%>% 
+      # spread(key = compound, value = q_val) %>% 
+      # arrange(`Mean Q Value`)
+  })
+  
+  output$widthtable <- renderDataTable({
+    data() %>%
+      janitor::clean_names() %>% 
+      mutate_if(is.double, ~ifelse(. == 0, NA, .)) %>% 
+      filter(!is.na(end_time_min)) %>% 
+      mutate(width = end_time_min - st_time_min) %>% 
+      select(sample, no, compound, width) %>% 
+      group_by(compound) %>% 
+      mutate(sd_width = sd(width, na.rm = TRUE)) %>% 
+      # spread(key = sample, value = width) %>% 
+      arrange(desc(sd_width), compound)
+  })
   # output$test <- renderDataTable({
   #   head(test())
   # })

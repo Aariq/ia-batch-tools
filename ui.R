@@ -35,16 +35,22 @@ shinyUI(fluidPage(sidebarLayout(
     tabsetPanel(type = "tabs", id = "tabs",
                   #this tab would have the RT deviation plotly plot and interactive table
                 tabPanel("RT",
-                         h2("Compounds sorted by standard deviation of retention time"),
-                         p("Hover over points to view details and select points to generate a table."),
+                         h2("RT Consistency"),
+                         p("Compounds sorted by standard deviation of retention time.  If you are inconsistent about choosing the correct peak, or if a compound has a naturally variable retention time, it will show up higher up and on earlier pages in these plots. Use the 'Page' input to look through all compounds. Hover over points to view details and select points using the selection tools on the plot to generate a table."),
                          plotlyOutput("diagnostic_plot"),
                          numericInput("page", "Page", min = 1, max = 10, value = 1, step = 1, width = "75px"),
                          # sliderInput("page", "Page", min = 1, max = 10, value = 1, step = 1),
-                         dataTableOutput("brush")))
+                         dataTableOutput("brush")),
                   #this tab would have a simple table of compounds sorted by mean Q-value
-    #             tabPanel("Q-Value", diagnostics %>% arrange(q_value)),
+                tabPanel("Q Value",
+                         h2("Q Values"),
+                         p("This table shows mean Q value for each compound across samples along with the Q value for each compound detected in each sample. You can also sort by other columns by clicking on them.  For example, you may spot individual sample/compound combinations with very low Q-values when sorting by q_val"),
+                         dataTableOutput("qtable")),
                   #this tab would have some diagnostics about peak width?
-    #             tabPanel("Width", diagnostics %>% arrange(desc(sd_width))),
+                tabPanel("Width",
+                         h2("Peak Width Consistency"),
+                         p("Compound peak widths sorted by standard deviation of peak width.  This is helpful for spotting inconsistency in manual integration of broad peaks or peaks that are sometimes cut off by overlap with another compound"),
+                         dataTableOutput("widthtable")))
                   #this tab would have some preliminary outlier diagnostics just to catch errors?
     #             tabPanel("Outliers", pcaoutlierplot, HDoutliersoutput)
                 # )
