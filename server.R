@@ -18,6 +18,8 @@ home = "~/Documents/ia-batch-tools" #for testing.  Change to "~" for production
 # home = "~"
 shinyServer(function(input, output, session) {
   
+  hideTab("tabs", "RT")
+  
   shinyDirChoose(input, "directory", roots = c(home = home))
   
   #sends to UI for debugging
@@ -96,6 +98,11 @@ shinyServer(function(input, output, session) {
       bind_rows(.id = "sample")
   })
   
+  # show tab after hitting go
+  observeEvent(input$go, {
+    showTab(inputId = "tabs", target = "RT")
+  })
+  
   diagnostic_df <- reactive({
     df <- data() %>%
       janitor::clean_names() %>% 
@@ -151,6 +158,7 @@ shinyServer(function(input, output, session) {
   
   observeEvent(diagnostic_df(), {
     updateNumericInput(session, "page", max = max(diagnostic_df()$page))
+    # updateSliderInput(session, "page", max = max(diagnostic_df()$page))
   })
   
   # display data for selected points in table format

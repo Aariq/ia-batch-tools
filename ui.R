@@ -32,13 +32,14 @@ shinyUI(fluidPage(sidebarLayout(
     # plotOutput("diagnostic_plot"),
     
     
-    tabsetPanel(type = "tabs",
+    tabsetPanel(type = "tabs", id = "tabs",
                   #this tab would have the RT deviation plotly plot and interactive table
                 tabPanel("RT",
                          h2("Compounds sorted by standard deviation of retention time"),
                          p("Hover over points to view details and select points to generate a table."),
                          plotlyOutput("diagnostic_plot"),
                          numericInput("page", "Page", min = 1, max = 10, value = 1, step = 1, width = "75px"),
+                         # sliderInput("page", "Page", min = 1, max = 10, value = 1, step = 1),
                          dataTableOutput("brush")))
                   #this tab would have a simple table of compounds sorted by mean Q-value
     #             tabPanel("Q-Value", diagnostics %>% arrange(q_value)),
