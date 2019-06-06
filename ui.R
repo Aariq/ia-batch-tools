@@ -40,6 +40,7 @@ shinyUI(fluidPage(sidebarLayout(
                          plotlyOutput("diagnostic_plot"),
                          numericInput("page", "Page", min = 1, max = 10, value = 1, step = 1, width = "75px"),
                          # sliderInput("page", "Page", min = 1, max = 10, value = 1, step = 1),
+                         p("Select datapoints above with one of the selection tools to populate this table"),
                          dataTableOutput("brush")),
                   #this tab would have a simple table of compounds sorted by mean Q-value
                 tabPanel("Q Value",
