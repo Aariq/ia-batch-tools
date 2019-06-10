@@ -148,6 +148,9 @@ shinyServer(function(input, output, session) {
       # arrange(`Mean Q Value`)
   })
   
+  # Idea for visualization for Q-values:
+  # a heat map with sample on the x-axis, sorted by average q-value (over all compounds) for that sample.  Compounds (with the lowest Q-values) on the y-axis, arranged by mean q-value for the compound.  That way shitty compounds and shitty samples would group together, but a unusually low q-value would stand out. Worth a try?
+  
   output$widthtable <- renderDataTable({
     data() %>%
       janitor::clean_names() %>% 
@@ -160,10 +163,7 @@ shinyServer(function(input, output, session) {
       # spread(key = sample, value = width) %>% 
       arrange(desc(sd_width), compound)
   })
-  # output$test <- renderDataTable({
-  #   head(test())
-  # })
-  
+
   output$isomertable <- renderDataTable({
     #Find potential duplicate RTs
     
@@ -175,17 +175,6 @@ shinyServer(function(input, output, session) {
       dplyr::filter(rt_diff < 0.005 | rt_diff2 > -0.005) %>%
       select(sample, no, compound, "main ion (m/z)" = main_ion_m_z, "RT" = r_time_min, "expected RT" = expect_min, "also integrated as...?" = possible_isomer, "Q" = q_val, "start time" = st_time_min, "end time" = end_time_min) %>%
       arrange(RT)
-      
-    
-    # RT.duplicate <- all.RTs %>%
-    #   #gather together again
-    #   gather(-No., -Compound, key = sample, value = RT) %>%
-    #   #arrange by RT
-    #   arrange(sample, RT) %>%
-    #   #calculat difference between RT and next RT
-    #   mutate(diff = RT - lag(RT), diff2 = RT - lead(RT)) %>%
-    #   #find all rows with a difference < some cutoff
-    #   filter(diff < 0.01 | diff2 > -0.01)
   })
   
   output$diagnostic_plot <- renderPlotly({

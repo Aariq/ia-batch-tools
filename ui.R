@@ -56,7 +56,9 @@ shinyUI(fluidPage(sidebarLayout(
                 tabPanel("Isomer",
                          h2("Same peak, multiple compounds?"),
                          p("This table looks for compounds that have a very small difference in retention time from other compounds within the same sample.  That could indicate that IonAnalytics is integrating the same peak as two different compounds.  This often happens when isomers have similar MS signatures and IonAnalytics picks the same peak for all isomers.  After a problematic peak is identified, the IonAnalytics method can be edited to narrow the retention time window based on the start and end times of the correct hit."),
-                         dataTableOutput("isomertable")))
+                         dataTableOutput("isomertable"),
+                         h2("Idea for visualization for Q-values:"),
+                         p("A heat map with sample on the x-axis, sorted by average q-value (over all compounds) for that sample.  Compounds (with the lowest Q-values) on the y-axis, arranged by mean q-value for the compound.  That way shitty compounds and shitty samples would group together, but a unusually low q-value would stand out. Worth a try?")))
                   
                   #this tab would have some preliminary outlier diagnostics just to catch errors?
     #             tabPanel("Outliers", pcaoutlierplot, HDoutliersoutput)
