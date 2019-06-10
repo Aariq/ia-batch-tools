@@ -19,6 +19,7 @@ shinyServer(function(input, output, session) {
   hideTab("tabs", "RT")
   hideTab("tabs", "Q Value")
   hideTab("tabs", "Width")
+  hideTab("tabs", "Isomer")
   
   shinyDirChoose(input, "directory", roots = c(home = home))
   
@@ -103,6 +104,7 @@ shinyServer(function(input, output, session) {
     showTab(inputId = "tabs", target = "RT")
     showTab(inputId = "tabs", target = "Q Value")
     showTab("tabs", "Width")
+    showTab("tabs", "Isomer")
     
   })
   
@@ -161,6 +163,30 @@ shinyServer(function(input, output, session) {
   # output$test <- renderDataTable({
   #   head(test())
   # })
+  
+  output$isomertable <- renderDataTable({
+    #Find potential duplicate RTs
+    
+    diagnostic_df() %>% 
+      arrange(sample, r_time_min) %>% 
+      mutate(rt_diff = r_time_min - lag(r_time_min), rt_diff2 = r_time_min - lead(r_time_min)) %>% 
+      mutate(possible_isomer = case_when(rt_diff < 0.005 ~ lag(compound),
+                                         rt_diff2 > -0.005 ~ lead(compound))) %>% 
+      dplyr::filter(rt_diff < 0.005 | rt_diff2 > -0.005) %>%
+      select(sample, no, compound, "main ion (m/z)" = main_ion_m_z, "RT" = r_time_min, "expected RT" = expect_min, "also integrated as...?" = possible_isomer, "Q" = q_val, "start time" = st_time_min, "end time" = end_time_min) %>%
+      arrange(RT)
+      
+    
+    # RT.duplicate <- all.RTs %>%
+    #   #gather together again
+    #   gather(-No., -Compound, key = sample, value = RT) %>%
+    #   #arrange by RT
+    #   arrange(sample, RT) %>%
+    #   #calculat difference between RT and next RT
+    #   mutate(diff = RT - lag(RT), diff2 = RT - lead(RT)) %>%
+    #   #find all rows with a difference < some cutoff
+    #   filter(diff < 0.01 | diff2 > -0.01)
+  })
   
   output$diagnostic_plot <- renderPlotly({
     p <- ggplot(diagnostic_df() %>%
