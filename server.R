@@ -1,55 +1,47 @@
 # TODO:
 # - What happens when some of the folders don't have a given .csv?  How to warn user of that or only show reports that are in all samples?  Two options: 1) only display reports if they are in all the selected samples (or alternatively have them greyed out if that's possible), 2) when you click 'import' just skip over folders where the report doesn't exist
-# - put on web (eg shinyapps.io)
 # - share with Nicole and ask her to try it
 # - would be nice if Q-value colorbar was the same across all pages of the plot
-# - add an input for how many compounds to show per page of plot
+# - add an input for how many compounds to show per page of plot?
 
 
 library(shiny)
 library(shinyFiles)
 library(tidyverse)
 library(glue)
-library(chemhelper)
+library(here)
+source("parse_ia.R")
 library(plotly)
-home = "~/Documents/ia-batch-tools" #for testing.  Change to "~" for production
-# home = "~"
+
 shinyServer(function(input, output, session) {
   
   hideTab("tabs", "RT")
   hideTab("tabs", "Q Value")
   hideTab("tabs", "Width")
   hideTab("tabs", "Isomer")
-  
-  shinyDirChoose(input, "directory", roots = c(home = home))
-  
-  #sends to UI for debugging
-  # output$directorypath <- renderPrint({
-  #   full_paths <- dir(parseDirPath(c(home = home), input$directory), full.names = TRUE)
-  #   full_paths
-  # })
-  
-  # Save directory choice three ways:
-  data_dir <- reactive({
-    parseDirPath(c(home = home), input$directory)
+
+  # unzips to "userdata" folder  
+  observeEvent(input$unzip, {
+    unzip(input$directory$datapath,
+          # junkpaths = TRUE,
+          unzip = "unzip",
+          exdir = here("userdata"))
   })
   
-  folders <- reactive({
-    list.files(parseDirPath(c(home = home), input$directory))
+  data_dir <- here("userdata", "Data")
+  folders <- eventReactive(input$unzip, {
+    list.files(here("userdata", "Data")) 
   })
-  
-  full_paths <- reactive({
-    dir(parseDirPath(c(home = home), input$directory), full.names = TRUE)
+  full_paths <- eventReactive(input$unzip, {
+    dir(here("userdata", "Data"), full.names = TRUE)
   })
-  
-  
   # display sample folders as a checkbox selction with all selected by default
-  observe({
+  observeEvent(input$unzip, {
     #get folder names
     
     # makes it have no choices until you select a directory
     if (is.null(folders()))
-      folders() <- character(0)
+      folders <- character(0)
     
     # Updates checkbox with report options
     updateCheckboxGroupInput(session, "sample_choice",
@@ -57,14 +49,17 @@ shinyServer(function(input, output, session) {
                              choices = folders(),
                              selected = folders())
   })
+  # Save directory choice three ways:
   
-  output$chosensamples <- renderPrint({ #for debugging only
+ 
+  
+  output$chosensamples <- renderPrint({ 
     input$sample_choice
   })
   
   # Save choices of folders
   chosen_folders <- reactive({
-    full_paths()[list.files(data_dir()) %in% input$sample_choice]
+    full_paths()[list.files(data_dir) %in% input$sample_choice]
   })
   
   #get .csv files in chosen folders
@@ -173,7 +168,14 @@ shinyServer(function(input, output, session) {
       mutate(possible_isomer = case_when(rt_diff < 0.005 ~ lag(compound),
                                          rt_diff2 > -0.005 ~ lead(compound))) %>% 
       dplyr::filter(rt_diff < 0.005 | rt_diff2 > -0.005) %>%
-      select(sample, no, compound, "main ion (m/z)" = main_ion_m_z, "RT" = r_time_min, "expected RT" = expect_min, "also integrated as...?" = possible_isomer, "Q" = q_val, "start time" = st_time_min, "end time" = end_time_min) %>%
+      select(sample, no, compound,
+             "main ion (m/z)" = main_ion_m_z,
+             "RT" = r_time_min,
+             "expected RT" = expect_min,
+             "also integrated as...?" = possible_isomer,
+             "Q" = q_val,
+             "start time" = st_time_min,
+             "end time" = end_time_min) %>%
       arrange(RT)
   })
   

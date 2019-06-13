@@ -7,12 +7,13 @@ shinyUI(fluidPage(sidebarLayout(
   sidebarPanel(
     h4("1. Save Reports in IonAnalytics"),
     p('In IonAnalytics, after searching a file with a method, click the "Export" button on the Integration Report tab and save the .csv file in the default location (inside the .D folder) with the default filename.  Do this for all samples.'),
-    
     # First, choose a directory
-    h4("2. Select the data folder for an IonAnalytics project"),
-    shinyDirButton("directory", "Folder select", "Please select a folder"),
-    # verbatimTextOutput("directorypath"), #outputs chosen paths for debugging
-    
+    h4("2. Upload .zip of data directory"),
+    p('Create a zip file of the data directory in your Ion Analytics project (containing all the .D directories) and upload it.  The zipped folder must be called "Data" and must contain folders that contain .csv files.'),
+    # shinyDirButton("directory", "Folder select", "Please select a folder"),
+    fileInput("directory", "Choose zipped data folder", accept = ".zip"), #is accept= actually working?
+    actionButton("unzip", "Unzip Files"),
+
     # Second, exclude any samples (folders).  By default they are all checked
     h4("3. Choose which samples to include"),
     checkboxGroupInput("sample_choice", "Choose Samples"), 
@@ -28,10 +29,7 @@ shinyUI(fluidPage(sidebarLayout(
   ),
 
   mainPanel(
-    # dataTableOutput("test"),
-    # plotOutput("diagnostic_plot"),
-    
-    
+
     tabsetPanel(type = "tabs", id = "tabs",
                   #this tab would have the RT deviation plotly plot and interactive table
                 tabPanel("RT",

@@ -1,0 +1,13 @@
+name: ia-batch-tools
+title: ia-batch-tools
+username:
+account: leafyeric
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 980177
+bundleId: 2151937
+url: https://leafyeric.shinyapps.io/ia-batch-tools/
+when: 1560457196.25102
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: ._.DS_Store|._090117_BACE_A4|testdata.zip|data
