@@ -151,6 +151,41 @@ shinyServer(function(input, output, session) {
   # Idea for visualization for Q-values:
   # a heat map with sample on the x-axis, sorted by average q-value (over all compounds) for that sample.  Compounds (with the lowest Q-values) on the y-axis, arranged by mean q-value for the compound.  That way shitty compounds and shitty samples would group together, but a unusually low q-value would stand out. Worth a try?
   
+  # a hueristic diagram of how to read the plot.
+  output$qplot_hueristic <- renderPlot({
+    p <- ggplot() +
+      geom_blank() + 
+      annotate("segment", x = -1, xend = 1, y = 0, yend = 0, arrow = arrow(ends = "both")) +
+      annotate("segment", x = 0, xend = 0, y = -1, yend = 1, arrow = arrow(ends = "both")) +
+      annotate("text", x = 0.90, y = -0.08, label = "High Sample Q-Value") +
+      annotate("text", x = -0.9, y = -0.08, label = "Low Sample Q-Value") +
+      
+      annotate("text", x = 0, y = 1.05, label = "High Compound Q-Value") +
+      annotate("text", x = 0, y = -1.05, label = "Low Compound Q-Value") +
+      labs(x = "Sample (arranged by mean Q-value across all compounds)",
+           y = "Compound (arranged by mean Q-value across all samples)") +
+      theme_void() + 
+      theme(axis.title = element_text(size = 14),
+            axis.title.y = element_text(angle = 90),
+            # axis.line = element_line(),
+            panel.background = element_rect(fill = "white", color = "black", size = 1))
+    return(p)
+  })
+  
+  output$qplot <- renderPlot({
+    qtable %>%
+      ungroup() %>% 
+      mutate(sample = fct_reorder(sample, q_val),
+             compound_trunc = fct_reorder(compound_trunc, q_val)) %>% 
+      arrange(`Mean Q Value`) %>% 
+      # add a filter so fewer compounds are shown.  Not sure how to do this exactly without dropping partial samples.
+      ggplot(aes(x = sample, y = compound_trunc, fill = q_val)) +
+      geom_tile() +
+      scale_fill_viridis_c(option = "C") +
+      labs(x = "low <-- sample mean Q-value --> high",
+           y = "low <-- compound mean Q-value --> high")
+  })
+  
   output$widthtable <- renderDataTable({
     data() %>%
       janitor::clean_names() %>% 
