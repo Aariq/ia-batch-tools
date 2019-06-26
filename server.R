@@ -173,8 +173,8 @@ shinyServer(function(input, output, session) {
     return(p)
   })
   
-  output$qplot <- renderPlot({
-    diagnostic_df() %>% 
+  output$qplot <- renderPlotly({
+    p <- diagnostic_df() %>% 
       # select(sample, no, compound, q_val) %>% 
       group_by(compound) %>% 
       mutate(`Mean Q Value` = mean(q_val, na.rm = TRUE)) %>% 
@@ -188,8 +188,9 @@ shinyServer(function(input, output, session) {
       geom_tile() +
       scale_fill_viridis_c(option = "C") +
       labs(x = "low <-- sample mean Q-value --> high",
-           y = "low <-- compound mean Q-value --> high") +
-      theme(axis.text.x = element_text(angle = 90))
+           y = "low <-- compound mean Q-value --> high") #+
+      # theme(axis.text.x = element_text(angle = 90))
+      ggplotly(p) %>% layout(xaxis = list(tickangle = -90))
   })
   
   output$widthtable <- renderDataTable({
