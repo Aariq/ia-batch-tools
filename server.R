@@ -12,8 +12,9 @@ library(tidyverse)
 library(glue)
 library(chemhelper)
 library(plotly)
-home = "~/Documents/ia-batch-tools" #for testing.  Change to "~" for production
+# home = "~/Documents/ia-batch-tools" #for testing.  Change to "~" for production
 # home = "~"
+home = "/Volumes"
 shinyServer(function(input, output, session) {
   
   hideTab("tabs", "RT")
@@ -140,7 +141,7 @@ shinyServer(function(input, output, session) {
   
   output$qtable <- renderDataTable({
     diagnostic_df() %>% 
-      select(sample, no, compound, q_val) %>% 
+      select(sample, no, compound, q_val) %>%
       group_by(compound) %>% 
       mutate(`Mean Q Value` = mean(q_val, na.rm = TRUE)) %>% 
       filter(!is.na(q_val)) #%>% 
@@ -173,17 +174,22 @@ shinyServer(function(input, output, session) {
   })
   
   output$qplot <- renderPlot({
-    qtable %>%
+    diagnostic_df() %>% 
+      # select(sample, no, compound, q_val) %>% 
+      group_by(compound) %>% 
+      mutate(`Mean Q Value` = mean(q_val, na.rm = TRUE)) %>% 
+      filter(!is.na(q_val)) %>% 
       ungroup() %>% 
       mutate(sample = fct_reorder(sample, q_val),
              compound_trunc = fct_reorder(compound_trunc, q_val)) %>% 
-      arrange(`Mean Q Value`) %>% 
-      # add a filter so fewer compounds are shown.  Not sure how to do this exactly without dropping partial samples.
+      arrange(`Mean Q Value`) %>%  
+      filter(`Mean Q Value` < 93) %>% 
       ggplot(aes(x = sample, y = compound_trunc, fill = q_val)) +
       geom_tile() +
       scale_fill_viridis_c(option = "C") +
       labs(x = "low <-- sample mean Q-value --> high",
-           y = "low <-- compound mean Q-value --> high")
+           y = "low <-- compound mean Q-value --> high") +
+      theme(axis.text.x = element_text(angle = 90))
   })
   
   output$widthtable <- renderDataTable({

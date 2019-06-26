@@ -2,6 +2,7 @@ library(shiny)
 library(shinyFiles)
 library(tidyverse)
 library(plotly)
+
 shinyUI(fluidPage(sidebarLayout(
   
   sidebarPanel(
@@ -50,7 +51,7 @@ shinyUI(fluidPage(sidebarLayout(
                          # p("This table shows mean Q value for each compound across samples along with the Q value for each compound detected in each sample. You can also sort by other columns by clicking on them.  For example, you may spot individual sample/compound combinations with very low Q-values when sorting by q_val"),
                          # dataTableOutput("qtable"),
                          h2("Idea for visualization for Q-values:"),
-                         plotOutput("qplot"),
+                         plotOutput("qplot", height = "600px"),
                          p("A heat map with sample on the x-axis, sorted by average q-value [over all compounds] for that sample.  Compounds [with the lowest Q-values] on the y-axis, arranged by mean q-value for the compound.  That way shitty compounds and shitty samples would group together, but a unusually low q-value would stand out. Worth a try?")),
                 
                 #this tab would have some diagnostics about peak width?
