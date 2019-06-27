@@ -4,6 +4,8 @@
 # - share with Nicole and ask her to try it
 # - would be nice if Q-value colorbar was the same across all pages of the plot
 # - add an input for how many compounds to show per page of plot
+# - what about adding a geom_segment() to the RT plot to show peak width?  Might be useful, might need more vertical jitter though.
+# - add tests?
 
 
 library(shiny)
@@ -23,12 +25,6 @@ shinyServer(function(input, output, session) {
   hideTab("tabs", "Isomer")
   
   shinyDirChoose(input, "directory", roots = c(home = home))
-  
-  #sends to UI for debugging
-  # output$directorypath <- renderPrint({
-  #   full_paths <- dir(parseDirPath(c(home = home), input$directory), full.names = TRUE)
-  #   full_paths
-  # })
   
   # Save directory choice three ways:
   data_dir <- reactive({
@@ -149,8 +145,6 @@ shinyServer(function(input, output, session) {
       # arrange(`Mean Q Value`)
   })
   
-  # Idea for visualization for Q-values:
-  # a heat map with sample on the x-axis, sorted by average q-value (over all compounds) for that sample.  Compounds (with the lowest Q-values) on the y-axis, arranged by mean q-value for the compound.  That way shitty compounds and shitty samples would group together, but a unusually low q-value would stand out. Worth a try?
   
   # a hueristic diagram of how to read the plot.
   output$qplot_hueristic <- renderPlot({
@@ -183,14 +177,16 @@ shinyServer(function(input, output, session) {
       mutate(sample = fct_reorder(sample, q_val),
              compound_trunc = fct_reorder(compound_trunc, q_val)) %>% 
       arrange(`Mean Q Value`) %>%  
-      filter(`Mean Q Value` < 93) %>% 
+      # filter(`Mean Q Value` < 93) %>% #filter just to make there be fewer rows
       ggplot(aes(x = sample, y = compound_trunc, fill = q_val)) +
       geom_tile() +
       scale_fill_viridis_c(option = "C") +
       labs(x = "low <-- sample mean Q-value --> high",
            y = "low <-- compound mean Q-value --> high") #+
       # theme(axis.text.x = element_text(angle = 90))
-      ggplotly(p) %>% layout(xaxis = list(tickangle = -90))
+      ggplotly(p) %>% 
+        layout(xaxis = list(tickangle = -90,
+                            fixedrange = TRUE)) #only allow zooming and panning along y-axis
   })
   
   output$widthtable <- renderDataTable({
@@ -202,7 +198,7 @@ shinyServer(function(input, output, session) {
       select(sample, no, compound, width) %>% 
       group_by(compound) %>% 
       mutate(sd_width = sd(width, na.rm = TRUE)) %>% 
-      # spread(key = sample, value = width) %>% 
+      spread(key = sample, value = width) %>%
       arrange(desc(sd_width), compound)
   })
 
@@ -235,7 +231,8 @@ shinyServer(function(input, output, session) {
       labs(x = "deviation from expected RT", y = "(No.) Compound",
            # title = "Compounds sorted by standard deviation of retention time",
            color = "Q")
-      ggplotly(p)
+      ggplotly(p) %>% 
+        layout(xaxis = list(fixedrange = TRUE)) #only allow zooming and panning along y-axis
   })
   
   observeEvent(diagnostic_df(), {
