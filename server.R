@@ -6,6 +6,7 @@
 # - add an input for how many compounds to show per page of plot
 # - what about adding a geom_segment() to the RT plot to show peak width?  Might be useful, might need more vertical jitter though.
 # - add tests?
+# - split peak detector? Check if RT is same as one of the two ends of the peak.
 
 
 library(shiny)
@@ -111,7 +112,9 @@ shinyServer(function(input, output, session) {
       #set zeroes to NAs
       mutate_if(is.double, ~ifelse(. == 0, NA, .)) %>% 
       #calculate deviations from expected RT
-      mutate(rt_dev = r_time_min - expect_min) %>% 
+      mutate(rt_dev = r_time_min - expect_min,
+             rt_start = st_time_min - expect_min,
+             rt_end = end_time_min - expect_min) %>% 
       group_by(compound) %>% 
       #remove compounds that don't appear in any files
       filter(!all(is.na(r_time_min))) %>%
@@ -145,27 +148,6 @@ shinyServer(function(input, output, session) {
       # arrange(`Mean Q Value`)
   })
   
-  
-  # a hueristic diagram of how to read the plot.
-  output$qplot_hueristic <- renderPlot({
-    p <- ggplot() +
-      geom_blank() + 
-      annotate("segment", x = -1, xend = 1, y = 0, yend = 0, arrow = arrow(ends = "both")) +
-      annotate("segment", x = 0, xend = 0, y = -1, yend = 1, arrow = arrow(ends = "both")) +
-      annotate("text", x = 0.90, y = -0.08, label = "High Sample Q-Value") +
-      annotate("text", x = -0.9, y = -0.08, label = "Low Sample Q-Value") +
-      
-      annotate("text", x = 0, y = 1.05, label = "High Compound Q-Value") +
-      annotate("text", x = 0, y = -1.05, label = "Low Compound Q-Value") +
-      labs(x = "Sample (arranged by mean Q-value across all compounds)",
-           y = "Compound (arranged by mean Q-value across all samples)") +
-      theme_void() + 
-      theme(axis.title = element_text(size = 14),
-            axis.title.y = element_text(angle = 90),
-            # axis.line = element_line(),
-            panel.background = element_rect(fill = "white", color = "black", size = 1))
-    return(p)
-  })
   
   output$qplot <- renderPlotly({
     p <- diagnostic_df() %>% 
@@ -216,20 +198,21 @@ shinyServer(function(input, output, session) {
   })
   
   output$diagnostic_plot <- renderPlotly({
+    j <- position_jitter(height = 0.2, width = 0)
     p <- ggplot(diagnostic_df() %>%
              #only plot one page at a time
              filter(page == input$page),
            aes(x = rt_dev,
-               # y = str_trunc(compound, width = 15),
                y = compound_trunc,
                label = sample,
                key = rownum,
                color = q_val)) +
-      geom_jitter(alpha = 0.5, width = 0, height = 0.2) +
+      geom_point(alpha = 0.5, position = j) +
+      geom_errorbarh(aes(xmin = rt_start, xmax = rt_end, y = compound_trunc),
+                     alpha = 0.4, height = 0, width = 0, position = j) +
       scale_color_viridis_c(option = "C") +
       coord_cartesian(xlim = c(-0.5, 0.5)) +
       labs(x = "deviation from expected RT", y = "(No.) Compound",
-           # title = "Compounds sorted by standard deviation of retention time",
            color = "Q")
       ggplotly(p) %>% 
         layout(xaxis = list(fixedrange = TRUE)) #only allow zooming and panning along y-axis
