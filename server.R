@@ -114,7 +114,8 @@ shinyServer(function(input, output, session) {
   
   # show tabs after hitting go
   observeEvent(input$go, {
-    showTab(inputId = "tabs", target = "RT")
+    showTab(inputId = "tabs", target = "RT-Plot")
+    showTab("tabs", "Table")
     showTab(inputId = "tabs", target = "Q Value")
     showTab("tabs", "Width")
     showTab("tabs", "Isomer")
