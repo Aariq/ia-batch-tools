@@ -1,10 +1,8 @@
 # TODO:
 # - What happens when some of the folders don't have a given .csv?  How to warn user of that or only show reports that are in all samples?  Two options: 1) only display reports if they are in all the selected samples (or alternatively have them greyed out if that's possible), 2) when you click 'import' just skip over folders where the report doesn't exist
-# - put on web (eg shinyapps.io)
-# - share with Nicole and ask her to try it
+# - share with Josh and ask him to try it
 # - would be nice if Q-value colorbar was the same across all pages of the plot
 # - add an input for how many compounds to show per page of plot
-# - what about adding a geom_segment() to the RT plot to show peak width?  Might be useful, might need more vertical jitter though.
 # - add tests?
 # - split peak detector? Check if RT is same as one of the two ends of the peak.
 
@@ -13,8 +11,24 @@ library(shiny)
 library(shinyFiles)
 library(tidyverse)
 library(glue)
-library(chemhelper)
 library(plotly)
+
+### Functions for reading in .csv's exported by Ion Analytics
+parse_IA <- function(file){
+  parsed_IA <- file %>%
+    str_replace_all("^.+\r\n", "") %>% #remove first line
+    str_replace_all("(?<!\r)\n", "") %>% #remove line breaks within headers (\n but now \r\n)
+    str_replace_all("\r\n", "\n") #convert weird windows linebreaks (\r\n) to regular \n
+  return(parsed_IA)
+}
+
+read_IA <- function(file){
+  output <- readr::read_file(file) %>%
+    parse_IA() %>%
+    readr::read_csv()
+  return(output)
+}
+###
 
 shinyServer(function(input, output, session) {
   
