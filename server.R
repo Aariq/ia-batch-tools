@@ -15,9 +15,7 @@ library(tidyverse)
 library(glue)
 library(chemhelper)
 library(plotly)
-# home = "~/Documents/ia-batch-tools" #for testing.  Change to "~" for production
-# home = "~"
-home = "/Volumes"
+
 shinyServer(function(input, output, session) {
   
   hideTab("tabs", "RT")
@@ -25,7 +23,7 @@ shinyServer(function(input, output, session) {
   hideTab("tabs", "Width")
   hideTab("tabs", "Isomer")
   
-  shinyDirChoose(input, "directory", roots = c(home = home))
+  shinyDirChoose(input, "directory", roots = getVolumes())
   
   # Save directory choice three ways:
   data_dir <- reactive({
