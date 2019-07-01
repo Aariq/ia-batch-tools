@@ -32,7 +32,8 @@ read_IA <- function(file){
 
 shinyServer(function(input, output, session) {
   
-  hideTab("tabs", "RT")
+  hideTab("tabs", "RT-Plot")
+  hideTab("tabs", "Table")
   hideTab("tabs", "Q Value")
   hideTab("tabs", "Width")
   hideTab("tabs", "Isomer")
@@ -135,7 +136,8 @@ shinyServer(function(input, output, session) {
       ungroup() %>% 
       # reorder compounds based on their standard deviation so most problematic ones show up in first page
       mutate(no = as.factor(no) %>% fct_reorder(rt_sd, .desc = TRUE)) %>% 
-      mutate(compound_trunc = glue("({no}) {str_trunc(compound, 15)}"))
+      mutate(compound_trunc = glue("({no}) {str_trunc(compound, 15)}")) %>% 
+      select(-type) #i don't know what the type column is even
     
     nperpage <- 20 #make input for this later?
     #figure out pages for plots
@@ -208,7 +210,9 @@ shinyServer(function(input, output, session) {
       select(sample, no, compound, "main ion (m/z)" = main_ion_m_z, "RT" = r_time_min, "expected RT" = expect_min, "also integrated as...?" = possible_isomer, "Q" = q_val, "start time" = st_time_min, "end time" = end_time_min) %>%
       arrange(RT)
   })
-  
+  output$diagnostic_table <- renderDataTable({
+    diagnostic_df()
+  })
   output$diagnostic_plot <- renderPlotly({
     j <- position_jitter(height = 0.2, width = 0)
     p <- ggplot(diagnostic_df() %>%
