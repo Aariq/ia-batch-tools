@@ -38,19 +38,21 @@ shinyServer(function(input, output, session) {
   hideTab("tabs", "Width")
   hideTab("tabs", "Isomer")
   
-  shinyDirChoose(input, "directory", roots = getVolumes())
+  roots = getVolumes(c("Preboot", "Recovery", "com.apple.TimeMachine.localsnapshots"))
+  
+  shinyDirChoose(input, "directory", roots = roots)
   
   # Save directory choice three ways:
   data_dir <- reactive({
-    parseDirPath(getVolumes(), input$directory)
+    parseDirPath(roots, input$directory)
   })
   
   folders <- reactive({
-    list.files(parseDirPath(getVolumes(), input$directory))
+    list.files(parseDirPath(roots, input$directory))
   })
   
   full_paths <- reactive({
-    dir(parseDirPath(getVolumes(), input$directory), full.names = TRUE)
+    dir(parseDirPath(roots, input$directory), full.names = TRUE)
   })
   
   
