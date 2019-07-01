@@ -27,15 +27,15 @@ shinyServer(function(input, output, session) {
   
   # Save directory choice three ways:
   data_dir <- reactive({
-    parseDirPath(c(home = home), input$directory)
+    parseDirPath(getVolumes(), input$directory)
   })
   
   folders <- reactive({
-    list.files(parseDirPath(c(home = home), input$directory))
+    list.files(parseDirPath(getVolumes(), input$directory))
   })
   
   full_paths <- reactive({
-    dir(parseDirPath(c(home = home), input$directory), full.names = TRUE)
+    dir(parseDirPath(getVolumes(), input$directory), full.names = TRUE)
   })
   
   
