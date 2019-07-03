@@ -33,22 +33,24 @@ data_raw <- map_df(full_paths, read_IA, .id = "sample")
 
 df <- data_raw %>% 
   janitor::clean_names() %>% 
+  rename(rt = r_time_min, rt_exp = expect_min, rt_window_st = st_time_min,
+         rt_window_end = end_time_min) %>% 
   #set zeroes to NAs
   mutate_if(is.double, ~ifelse(. == 0, NA, .)) %>% 
   #calculate deviations from expected RT
-  mutate(rt_dev = r_time_min - expect_min,
-         rt_start = st_time_min - expect_min,
-         rt_end = end_time_min - expect_min) %>%
+  mutate(rt_dev = rt - rt_exp,
+         rt_dev_start = rt_window_st - rt_exp,
+         rt_dev_end = rt_window_end - rt_exp) %>% 
   group_by(compound) %>% 
   #remove compounds that don't appear in any files
-  filter(!all(is.na(r_time_min))) %>%
+  filter(!all(is.na(rt))) %>%
   #calculate standard deviation within compound
-  mutate(rt_sd = sd(r_time_min, na.rm = TRUE)) %>% 
+  mutate(rt_sd = sd(rt, na.rm = TRUE)) %>% 
   ungroup() %>% 
   # reorder compounds based on their standard deviation so most problematic ones show up in first page
   mutate(no = as.factor(no) %>% fct_reorder(rt_sd, .desc = TRUE)) %>% 
-  mutate(compound_trunc = glue("({no}) {str_trunc(compound, 15)}"))
-
+  mutate(compound_trunc = glue("({no}) {str_trunc(compound, 15)}")) %>% 
+  select(-type) #i don't know what the type column is even
 
 nperpage <- 20 #make input for this later?
 #figure out pages for plots
@@ -58,9 +60,7 @@ lvls <-
   #add a column that puts them in groups of nperpage (currently 20)
   mutate(page = rep(1:ceiling(n()/nperpage), each = nperpage, length.out = n()))
 #join that to the original data so there is a grouping variable called "page"
-
-data_cleaned <-
-  full_join(df, lvls) %>%
+data_cleaned <- full_join(df, lvls) %>%
   arrange(desc(rt_sd)) %>% 
   mutate(rownum = row_number())
 
@@ -72,13 +72,15 @@ p <- ggplot(data_cleaned %>%
               #only plot one page at a time
               filter(page == page),
             aes(x = rt_dev,
-                # y = str_trunc(compound, width = 15),
                 y = compound_trunc,
-                label = sample,
-                key = rownum,
-                color = q_val)) +
+                color = q_val,
+                text = glue("File: {sample}
+                            Compound: {compound_trunc}
+                            RT: {round(rt, 3)}
+                            RT expected: {round(rt_exp, 3)}
+                            Q Value: {round(q_val, 3)}"))) +
   geom_point(alpha = 0.5, position = j) +
-  geom_errorbarh(aes(xmin = rt_start, xmax = rt_end, height = 0, width = 0),
+  geom_errorbarh(aes(xmin = rt_dev_start, xmax = rt_dev_end, height = 0, width = 0),
                  height = 0, width = 0,
                  alpha = 0.4, position = j) +
   scale_color_viridis_c(option = "C") +
@@ -86,7 +88,7 @@ p <- ggplot(data_cleaned %>%
   labs(x = "deviation from expected RT", y = "(No.) Compound",
        # title = "Compounds sorted by standard deviation of retention time",
        color = "Q")
-ggplotly(p) %>% 
+ggplotly(p, tooltip = c("text")) %>% 
   layout(xaxis = list(fixedrange = TRUE)) #only allow zooming and panning along y-axis
 
 

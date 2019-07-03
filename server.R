@@ -167,9 +167,12 @@ shinyServer(function(input, output, session) {
                     filter(page == input$page),
                   aes(x = rt_dev,
                       y = compound_trunc,
-                      label = sample,
-                      key = rownum,
-                      color = q_val)) +
+                      color = q_val,
+                      text = glue("File: {sample}
+                            Compound: {compound_trunc}
+                            RT: {round(rt, 3)}
+                            RT expected: {round(rt_exp, 3)}
+                            Q Value: {round(q_val, 3)}"))) +
         geom_point(alpha = 0.5, position = j) +
         geom_errorbarh(aes(xmin = rt_dev_start, xmax = rt_dev_end, y = compound_trunc),
                        alpha = 0.4, height = 0, width = 0, position = j) +
@@ -177,7 +180,7 @@ shinyServer(function(input, output, session) {
         coord_cartesian(xlim = c(-0.5, 0.5)) +
         labs(x = "deviation from expected RT", y = "(No.) Compound",
              color = "Q")
-      ggplotly(p) %>% 
+      ggplotly(p, tooltip = c("text")) %>% 
         layout(xaxis = list(fixedrange = TRUE)) #only allow zooming and panning along y-axis
     })
     
