@@ -121,21 +121,23 @@ shinyServer(function(input, output, session) {
     showTab("tabs", "Isomer")
     
   })
-  
-  diagnostic_df <- reactive({
+
+    diagnostic_df <- reactive({
     df <- data() %>%
       janitor::clean_names() %>% 
+      rename(rt = r_time_min, rt_exp = expect_min, rt_window_st = st_time_min,
+             rt_window_end = end_time_min) %>% 
       #set zeroes to NAs
       mutate_if(is.double, ~ifelse(. == 0, NA, .)) %>% 
       #calculate deviations from expected RT
-      mutate(rt_dev = r_time_min - expect_min,
-             rt_start = st_time_min - expect_min,
-             rt_end = end_time_min - expect_min) %>% 
+      mutate(rt_dev = rt - rt_exp,
+             rt_dev_start = rt_window_st - rt_exp,
+             rt_dev_end = rt_window_end - rt_exp) %>% 
       group_by(compound) %>% 
       #remove compounds that don't appear in any files
-      filter(!all(is.na(r_time_min))) %>%
+      filter(!all(is.na(rt))) %>%
       #calculate standard deviation within compound
-      mutate(rt_sd = sd(r_time_min, na.rm = TRUE)) %>% 
+      mutate(rt_sd = sd(rt, na.rm = TRUE)) %>% 
       ungroup() %>% 
       # reorder compounds based on their standard deviation so most problematic ones show up in first page
       mutate(no = as.factor(no) %>% fct_reorder(rt_sd, .desc = TRUE)) %>% 
@@ -154,7 +156,46 @@ shinyServer(function(input, output, session) {
       arrange(desc(rt_sd)) %>% 
       mutate(rownum = row_number())
   })
-  
+    output$diagnostic_table <- renderDataTable({
+      diagnostic_df()
+    })
+    
+    output$diagnostic_plot <- renderPlotly({
+      j <- position_jitter(height = 0.2, width = 0)
+      p <- ggplot(diagnostic_df() %>%
+                    #only plot one page at a time
+                    filter(page == input$page),
+                  aes(x = rt_dev,
+                      y = compound_trunc,
+                      label = sample,
+                      key = rownum,
+                      color = q_val)) +
+        geom_point(alpha = 0.5, position = j) +
+        geom_errorbarh(aes(xmin = rt_dev_start, xmax = rt_dev_end, y = compound_trunc),
+                       alpha = 0.4, height = 0, width = 0, position = j) +
+        scale_color_viridis_c(option = "C") +
+        coord_cartesian(xlim = c(-0.5, 0.5)) +
+        labs(x = "deviation from expected RT", y = "(No.) Compound",
+             color = "Q")
+      ggplotly(p) %>% 
+        layout(xaxis = list(fixedrange = TRUE)) #only allow zooming and panning along y-axis
+    })
+    
+    observeEvent(diagnostic_df(), {
+      updateNumericInput(session, "page", max = max(diagnostic_df()$page))
+      # updateSliderInput(session, "page", max = max(diagnostic_df()$page))
+    })
+    
+    # display data for selected points in table format
+    output$brush <- renderDataTable({
+      d <- event_data("plotly_selected")
+      diagnostic_df() %>%
+        filter(rownum %in% d$key) %>% 
+        select(sample, no. = no, compound, RT = rt, `Expected RT` = rt_exp, `RT sd` = rt_sd, q_val)
+      # d
+    })
+    
+    
   output$qtable <- renderDataTable({
     diagnostic_df() %>% 
       select(sample, no, compound, q_val) %>%
@@ -189,14 +230,14 @@ shinyServer(function(input, output, session) {
   })
   
   output$widthtable <- renderDataTable({
-    data() %>%
-      janitor::clean_names() %>% 
+    diagnostic_df() %>% 
       mutate_if(is.double, ~ifelse(. == 0, NA, .)) %>% 
-      filter(!is.na(end_time_min)) %>% 
-      mutate(width = end_time_min - st_time_min) %>% 
+      filter(!is.na(rt_window_end)) %>% 
+      mutate(width = rt_window_end - rt_window_st) %>% 
       select(sample, no, compound, width) %>% 
       group_by(compound) %>% 
-      mutate(sd_width = sd(width, na.rm = TRUE)) %>% 
+      mutate(mean_width = mean(width, na.rm = TRUE),
+             sd_width = sd(width, na.rm = TRUE)) %>% 
       spread(key = sample, value = width) %>%
       arrange(desc(sd_width), compound)
   })
@@ -205,50 +246,14 @@ shinyServer(function(input, output, session) {
     #Find potential duplicate RTs
     
     diagnostic_df() %>% 
-      arrange(sample, r_time_min) %>% 
-      mutate(rt_diff = r_time_min - lag(r_time_min), rt_diff2 = r_time_min - lead(r_time_min)) %>% 
+      arrange(sample, rt) %>% 
+      mutate(rt_diff = rt - lag(rt), rt_diff2 = rt - lead(rt)) %>% 
       mutate(possible_isomer = case_when(rt_diff < 0.005 ~ lag(compound),
                                          rt_diff2 > -0.005 ~ lead(compound))) %>% 
       dplyr::filter(rt_diff < 0.005 | rt_diff2 > -0.005) %>%
-      select(sample, no, compound, "main ion (m/z)" = main_ion_m_z, "RT" = r_time_min, "expected RT" = expect_min, "also integrated as...?" = possible_isomer, "Q" = q_val, "start time" = st_time_min, "end time" = end_time_min) %>%
+      select(sample, no, compound, "main ion (m/z)" = main_ion_m_z, "RT" = rt, "expected RT" = rt_exp, "also integrated as...?" = possible_isomer, "Q" = q_val, "start time" = rt_window_st, "end time" = rt_window_end) %>%
       arrange(RT)
   })
-  output$diagnostic_table <- renderDataTable({
-    diagnostic_df()
-  })
-  output$diagnostic_plot <- renderPlotly({
-    j <- position_jitter(height = 0.2, width = 0)
-    p <- ggplot(diagnostic_df() %>%
-             #only plot one page at a time
-             filter(page == input$page),
-           aes(x = rt_dev,
-               y = compound_trunc,
-               label = sample,
-               key = rownum,
-               color = q_val)) +
-      geom_point(alpha = 0.5, position = j) +
-      geom_errorbarh(aes(xmin = rt_start, xmax = rt_end, y = compound_trunc),
-                     alpha = 0.4, height = 0, width = 0, position = j) +
-      scale_color_viridis_c(option = "C") +
-      coord_cartesian(xlim = c(-0.5, 0.5)) +
-      labs(x = "deviation from expected RT", y = "(No.) Compound",
-           color = "Q")
-      ggplotly(p) %>% 
-        layout(xaxis = list(fixedrange = TRUE)) #only allow zooming and panning along y-axis
-  })
   
-  observeEvent(diagnostic_df(), {
-    updateNumericInput(session, "page", max = max(diagnostic_df()$page))
-    # updateSliderInput(session, "page", max = max(diagnostic_df()$page))
-  })
-  
-  # display data for selected points in table format
-  output$brush <- renderDataTable({
-    d <- event_data("plotly_selected")
-    diagnostic_df() %>%
-      filter(rownum %in% d$key) %>% 
-      select(sample, no. = no, compound, RT = r_time_min, `Expected RT` = expect_min, `RT sd` = rt_sd, q_val)
-    # d
-  })
   
 })
