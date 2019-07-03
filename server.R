@@ -168,6 +168,7 @@ shinyServer(function(input, output, session) {
                   aes(x = rt_dev,
                       y = compound_trunc,
                       color = q_val,
+                      key = rownum, #necessary for brush selection to work
                       text = glue("File: {sample}
                             Compound: {compound_trunc}
                             RT: {round(rt, 3)}
@@ -181,7 +182,7 @@ shinyServer(function(input, output, session) {
         labs(x = "deviation from expected RT", y = "(No.) Compound",
              color = "Q")
       ggplotly(p, tooltip = c("text")) %>% 
-        layout(xaxis = list(fixedrange = TRUE)) #only allow zooming and panning along y-axis
+        layout(xaxis = list(fixedrange = TRUE))  #only allow zooming and panning along y-axis
     })
     
     observeEvent(diagnostic_df(), {
@@ -229,7 +230,8 @@ shinyServer(function(input, output, session) {
       # theme(axis.text.x = element_text(angle = 90))
       ggplotly(p) %>% 
         layout(xaxis = list(tickangle = -90,
-                            fixedrange = TRUE)) #only allow zooming and panning along y-axis
+                            fixedrange = TRUE))  #only allow zooming and panning along y-axis
+        
   })
   
   output$widthtable <- renderDataTable({
