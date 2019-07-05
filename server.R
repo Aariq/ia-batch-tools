@@ -12,6 +12,7 @@ library(shinyFiles)
 library(tidyverse)
 library(glue)
 library(plotly)
+library(DT)
 
 ### Functions for reading in .csv's exported by Ion Analytics
 parse_IA <- function(file){
@@ -156,9 +157,15 @@ shinyServer(function(input, output, session) {
       arrange(desc(rt_sd)) %>% 
       mutate(rownum = row_number())
   })
-    output$diagnostic_table <- renderDataTable({
-      diagnostic_df()
-    })
+    output$diagnostic_table <- 
+      DT::renderDataTable(diagnostic_df(),
+                          server=FALSE,
+                          extensions = c("Buttons"),
+                          options = list(
+                            dom = "Bfrtip",
+                            buttons = c("copy", "csv", "excel")
+                          )
+      )
     
     output$diagnostic_plot <- renderPlotly({
       j <- position_jitter(height = 0.2, width = 0)
@@ -191,13 +198,18 @@ shinyServer(function(input, output, session) {
     })
     
     # display data for selected points in table format
-    output$brush <- renderDataTable({
+    output$brush <- DT::renderDataTable({
       d <- event_data("plotly_selected")
       diagnostic_df() %>%
         filter(rownum %in% d$key) %>% 
         select(sample, no. = no, compound, RT = rt, `Expected RT` = rt_exp, `RT sd` = rt_sd, q_val)
-      # d
-    })
+    },
+    server = FALSE,
+    extensions = c("Buttons"),
+    options = list(
+      dom = "Bfrtip",
+      buttons = c("copy", "csv", "excel"))
+    )
     
     
   output$qtable <- renderDataTable({

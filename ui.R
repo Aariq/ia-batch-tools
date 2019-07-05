@@ -2,6 +2,7 @@ library(shiny)
 library(shinyFiles)
 library(tidyverse)
 library(plotly)
+library(DT)
 
 shinyUI(fluidPage(sidebarLayout(
   
@@ -56,12 +57,12 @@ shinyUI(fluidPage(sidebarLayout(
                          numericInput("page", "Page", min = 1, max = 10, value = 1, step = 1, width = "75px"),
                          # sliderInput("page", "Page", min = 1, max = 10, value = 1, step = 1),
                          p("Select datapoints above with one of the selection tools to populate this table"),
-                         dataTableOutput("brush")),
+                         DT::dataTableOutput("brush")),
                 
                 tabPanel("Table",
                          h2("Batch Data Table"),
                          p("All the data, searchable"),
-                         dataTableOutput("diagnostic_table")),
+                         DT::dataTableOutput("diagnostic_table")),
                 
                 tabPanel("Q Value",
                          h2("Q-values Consistency"),
