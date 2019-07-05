@@ -72,12 +72,12 @@ shinyUI(fluidPage(sidebarLayout(
                 tabPanel("Width",
                          h2("Peak Width Consistency"),
                          p("Compound peak widths sorted by standard deviation of peak width.  This is helpful for spotting inconsistency in manual integration of broad peaks or peaks that are sometimes cut off by overlap with another compound"),
-                         dataTableOutput("widthtable")),
+                         DT::dataTableOutput("widthtable")),
                 
                 tabPanel("Isomer",
                          h2("Same peak, multiple compounds?"),
                          p("This table looks for compounds that have a very small difference in retention time from other compounds within the same sample.  That could indicate that IonAnalytics is integrating the same peak as two different compounds.  This often happens when isomers have similar MS signatures and IonAnalytics picks the same peak for all isomers.  After a problematic peak is identified, the IonAnalytics method can be edited to narrow the retention time window based on the start and end times of the correct hit."),
-                         dataTableOutput("isomertable")))
+                         DT::dataTableOutput("isomertable")))
                   
                   #this tab would have some preliminary outlier diagnostics just to catch errors?
     #             tabPanel("Outliers", pcaoutlierplot, HDoutliersoutput)

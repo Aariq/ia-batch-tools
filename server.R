@@ -246,7 +246,7 @@ shinyServer(function(input, output, session) {
         
   })
   
-  output$widthtable <- renderDataTable({
+  output$widthtable <- DT::renderDataTable({
     diagnostic_df() %>% 
       mutate_if(is.double, ~ifelse(. == 0, NA, .)) %>% 
       filter(!is.na(rt_window_end)) %>% 
@@ -257,7 +257,12 @@ shinyServer(function(input, output, session) {
              sd_width = sd(width, na.rm = TRUE)) %>% 
       spread(key = sample, value = width) %>%
       arrange(desc(sd_width), compound)
-  })
+  },    
+  server = FALSE,
+  extensions = c("Buttons"),
+  options = list(
+    dom = "Bfrtip",
+    buttons = c("copy", "csv", "excel")))
 
   output$isomertable <- renderDataTable({
     #Find potential duplicate RTs
@@ -270,7 +275,12 @@ shinyServer(function(input, output, session) {
       dplyr::filter(rt_diff < 0.005 | rt_diff2 > -0.005) %>%
       select(sample, no, compound, "main ion (m/z)" = main_ion_m_z, "RT" = rt, "expected RT" = rt_exp, "also integrated as...?" = possible_isomer, "Q" = q_val, "start time" = rt_window_st, "end time" = rt_window_end) %>%
       arrange(RT)
-  })
+  },
+  server = FALSE,
+  extensions = c("Buttons"),
+  options = list(
+    dom = "Bfrtip",
+    buttons = c("copy", "csv", "excel")))
   
   
 })
