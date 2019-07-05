@@ -204,7 +204,7 @@ shinyServer(function(input, output, session) {
         filter(rownum %in% d$key) %>% 
         select(sample, no. = no, compound, RT = rt, `Expected RT` = rt_exp, `RT sd` = rt_sd, q_val)
     },
-    server = FALSE,
+    # server = FALSE, #Allows download of entire dataframe, not just what's visible in the browser.  However, not good for large data
     extensions = c("Buttons"),
     options = list(
       dom = "Bfrtip",
@@ -258,7 +258,7 @@ shinyServer(function(input, output, session) {
       spread(key = sample, value = width) %>%
       arrange(desc(sd_width), compound)
   },    
-  server = FALSE,
+  # server = FALSE, #not good for large data
   extensions = c("Buttons"),
   options = list(
     dom = "Bfrtip",
@@ -276,7 +276,7 @@ shinyServer(function(input, output, session) {
       select(sample, no, compound, "main ion (m/z)" = main_ion_m_z, "RT" = rt, "expected RT" = rt_exp, "also integrated as...?" = possible_isomer, "Q" = q_val, "start time" = rt_window_st, "end time" = rt_window_end) %>%
       arrange(RT)
   },
-  server = FALSE,
+  # server = FALSE, #not good for large data
   extensions = c("Buttons"),
   options = list(
     dom = "Bfrtip",
