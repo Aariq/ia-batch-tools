@@ -1,6 +1,5 @@
 # TODO:
 # - What happens when some of the folders don't have a given .csv?  How to warn user of that or only show reports that are in all samples?  Two options: 1) only display reports if they are in all the selected samples (or alternatively have them greyed out if that's possible), 2) when you click 'import' just skip over folders where the report doesn't exist
-# - share with Josh and ask him to try it
 # - would be nice if Q-value colorbar was the same across all pages of the plot
 # - add an input for how many compounds to show per page of plot
 # - add tests?
@@ -159,10 +158,10 @@ shinyServer(function(input, output, session) {
   })
     output$diagnostic_table <- 
       DT::renderDataTable(diagnostic_df(),
-                          server=FALSE,
-                          extensions = c("Buttons"),
+                          # server=FALSE,
+                          extensions = c("Buttons"), filter = "top",
                           options = list(
-                            dom = "Bfrtip",
+                            dom = "lBfrtip",
                             buttons = c("copy", "csv", "excel")
                           )
       )
@@ -207,7 +206,7 @@ shinyServer(function(input, output, session) {
     # server = FALSE, #Allows download of entire dataframe, not just what's visible in the browser.  However, not good for large data
     extensions = c("Buttons"),
     options = list(
-      dom = "Bfrtip",
+      dom = "Brtip",
       buttons = c("copy", "csv", "excel"))
     )
     
@@ -261,9 +260,13 @@ shinyServer(function(input, output, session) {
   # server = FALSE, #not good for large data
   extensions = c("Buttons"),
   options = list(
-    dom = "Bfrtip",
-    buttons = c("copy", "csv", "excel")))
+    dom = "lBrtip",
+    buttons = c("copy", "csv", "excel")
+    )
+  )
 
+  #TODO: Improve this table.  After "also integrated as..." include compound number, RT, and main ion (e.g. RT2, Main Ion2)
+  #TODO: Add import of ions from ion tab in method.  Then, look for match of any two(?) ions to further filter possible isomers.
   output$isomertable <- renderDataTable({
     #Find potential duplicate RTs
     
@@ -277,10 +280,12 @@ shinyServer(function(input, output, session) {
       arrange(RT)
   },
   # server = FALSE, #not good for large data
-  extensions = c("Buttons"),
+  extensions = c("Buttons"), filter = "top",
   options = list(
-    dom = "Bfrtip",
-    buttons = c("copy", "csv", "excel")))
+    dom = "lBfrtip",
+    buttons = c("copy", "csv", "excel")
+    )
+  )
   
-  
+
 })
