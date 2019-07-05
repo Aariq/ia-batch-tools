@@ -109,7 +109,7 @@ qplot <- qtable %>%
   labs(x = "low <-- sample mean Q-value --> high",
        y = "low <-- compound mean Q-value --> high") 
 
-library(plotly)  
+
 
 
 
@@ -153,7 +153,29 @@ df %>% arrange(sample) %>% #View()
   arrange(mean_q) %>% View()
 
 
-
+# Isomer table
+tol = 0.005
+data_cleaned %>% 
+  arrange(sample, rt) %>% #important for lag() and lead()
+  mutate(rt_diff = rt - lag(rt), rt_diff2 = rt - lead(rt)) %>% 
+  mutate(compound2 = case_when(rt_diff < tol ~ lag(compound),
+                               rt_diff2 > -tol ~ lead(compound)),
+         no2 = case_when(rt_diff < tol ~ lag(no),
+                         rt_diff2 > -tol ~ lead(no)),
+         main_ion2 = case_when(rt_diff < tol ~ lag(main_ion_m_z),
+                               rt_diff2 > -tol ~ lead(main_ion_m_z)),
+         rt2 = case_when(rt_diff < tol ~ lag(rt),
+                         rt_diff2 > -tol ~ lead(rt))) %>% 
+  dplyr::filter(rt_diff < tol | rt_diff2 > -tol) %>%
+  select(sample, no, compound,"main ion (m/z)" = main_ion_m_z, "expected RT" = rt_exp, RT = rt, 
+         "no. 2" = no2, "compound 2" = compound2, "main ion 2" = main_ion2, "RT 2" = rt2) %>%
+  arrange(RT) %>% DT::datatable(
+         
+         # server = FALSE, #not good for large data
+         extensions = c("Buttons"), filter = "top",
+         options = list(
+           dom = "lBfrtip",
+           buttons = c("copy", "csv", "excel")))
 
 
 

@@ -126,7 +126,7 @@ shinyServer(function(input, output, session) {
     df <- data() %>%
       janitor::clean_names() %>% 
       rename(rt = r_time_min, rt_exp = expect_min, rt_window_st = st_time_min,
-             rt_window_end = end_time_min) %>% 
+             rt_window_end = end_time_min) %>%
       #set zeroes to NAs
       mutate_if(is.double, ~ifelse(. == 0, NA, .)) %>% 
       #calculate deviations from expected RT
@@ -157,7 +157,11 @@ shinyServer(function(input, output, session) {
       mutate(rownum = row_number())
   })
     output$diagnostic_table <- 
-      DT::renderDataTable(diagnostic_df(),
+      DT::renderDataTable({
+        diagnostic_df() %>% 
+          mutate_if(is.numeric, ~round(., 4)) %>% 
+          select(sample, no, compound, main_ion_m_z, rt, rt_exp, rt_window_st, rt_window_end, height, area = area_a_u_s, q_val, plot_page = page)
+        },
                           # server=FALSE,
                           extensions = c("Buttons"), filter = "top",
                           options = list(
@@ -265,19 +269,26 @@ shinyServer(function(input, output, session) {
     )
   )
 
-  #TODO: Improve this table.  After "also integrated as..." include compound number, RT, and main ion (e.g. RT2, Main Ion2)
   #TODO: Add import of ions from ion tab in method.  Then, look for match of any two(?) ions to further filter possible isomers.
   output$isomertable <- renderDataTable({
     #Find potential duplicate RTs
-    
+    tol = 0.005 #tolerance in RT. Could make this a reactive input in the future.
     diagnostic_df() %>% 
       arrange(sample, rt) %>% 
       mutate(rt_diff = rt - lag(rt), rt_diff2 = rt - lead(rt)) %>% 
-      mutate(possible_isomer = case_when(rt_diff < 0.005 ~ lag(compound),
-                                         rt_diff2 > -0.005 ~ lead(compound))) %>% 
-      dplyr::filter(rt_diff < 0.005 | rt_diff2 > -0.005) %>%
-      select(sample, no, compound, "main ion (m/z)" = main_ion_m_z, "RT" = rt, "expected RT" = rt_exp, "also integrated as...?" = possible_isomer, "Q" = q_val, "start time" = rt_window_st, "end time" = rt_window_end) %>%
-      arrange(RT)
+      mutate(compound2 = case_when(rt_diff < tol ~ lag(compound),
+                                   rt_diff2 > -tol ~ lead(compound)),
+             no2 = case_when(rt_diff < tol ~ lag(no),
+                             rt_diff2 > -tol ~ lead(no)),
+             main_ion2 = case_when(rt_diff < tol ~ lag(main_ion_m_z),
+                                   rt_diff2 > -tol ~ lead(main_ion_m_z)),
+             rt2 = case_when(rt_diff < tol ~ lag(rt),
+                             rt_diff2 > -tol ~ lead(rt))) %>% 
+      dplyr::filter(rt_diff < tol | rt_diff2 > -tol) %>%
+      select(sample, no, compound,"main ion (m/z)" = main_ion_m_z, "expected RT" = rt_exp, RT = rt, 
+             "no. 2" = no2, "compound 2" = compound2, "main ion 2" = main_ion2, "RT 2" = rt2) %>%
+      arrange(RT) %>%
+      mutate_if(is.numeric, ~round(., 4))
   },
   # server = FALSE, #not good for large data
   extensions = c("Buttons"), filter = "top",
