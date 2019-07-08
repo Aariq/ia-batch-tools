@@ -205,7 +205,8 @@ shinyServer(function(input, output, session) {
       d <- event_data("plotly_selected")
       diagnostic_df() %>%
         filter(rownum %in% d$key) %>% 
-        select(sample, no. = no, compound, RT = rt, `Expected RT` = rt_exp, `RT sd` = rt_sd, q_val)
+        select(sample, no. = no, compound, RT = rt, `Expected RT` = rt_exp, `RT sd` = rt_sd, q_val) %>% 
+        mutate_if(is.numeric, ~round(., 3))
     },
     # server = FALSE, #Allows download of entire dataframe, not just what's visible in the browser.  However, not good for large data
     extensions = c("Buttons"),
