@@ -284,10 +284,13 @@ shinyServer(function(input, output, session) {
              main_ion2 = case_when(rt_diff < tol ~ lag(main_ion_m_z),
                                    rt_diff2 > -tol ~ lead(main_ion_m_z)),
              rt2 = case_when(rt_diff < tol ~ lag(rt),
-                             rt_diff2 > -tol ~ lead(rt))) %>% 
+                             rt_diff2 > -tol ~ lead(rt)),
+             rt_exp2 = case_when(rt_diff < tol ~lag(rt_exp),
+                                 rt_diff2 > -tol ~lead(rt_exp))) %>% 
       dplyr::filter(rt_diff < tol | rt_diff2 > -tol) %>%
       select(sample, no, compound,"main ion (m/z)" = main_ion_m_z, "expected RT" = rt_exp, RT = rt, 
-             "no. 2" = no2, "compound 2" = compound2, "main ion 2" = main_ion2, "RT 2" = rt2) %>%
+             "no. 2" = no2, "compound 2" = compound2, "main ion 2" = main_ion2, "RT 2" = rt2,
+             "expected RT 2" = rt_exp2) %>%
       arrange(RT) %>%
       mutate_if(is.numeric, ~round(., 4))
   },
