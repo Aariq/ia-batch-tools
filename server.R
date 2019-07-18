@@ -177,7 +177,7 @@ shinyServer(function(input, output, session) {
                     #only plot one page at a time
                     filter(page == input$page),
                   aes(x = rt_dev,
-                      y = compound_trunc,
+                      y = fct_inorder(compound_trunc),
                       color = q_val,
                       key = rownum, #necessary for brush selection to work
                       text = glue("File: {sample}
