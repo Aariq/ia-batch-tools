@@ -64,7 +64,7 @@ data_cleaned <- full_join(df, lvls) %>%
   arrange(desc(rt_sd)) %>% 
   mutate(rownum = row_number())
 
-View(data_cleaned)
+# View(data_cleaned)
 page = 5
 # diagnostic plot
 j <- position_jitter(height = 0.2, width = 0)
@@ -79,7 +79,7 @@ p <- ggplot(data_cleaned %>%
                             RT: {round(rt, 3)}
                             RT expected: {round(rt_exp, 3)}
                             Q Value: {round(q_val, 3)}"))) +
-  geom_point(alpha = 0.5, position = j) +
+  geom_miss_point(alpha = 0.5, position = j) +
   geom_errorbarh(aes(xmin = rt_dev_start, xmax = rt_dev_end, height = 0, width = 0),
                  height = 0, width = 0,
                  alpha = 0.4, position = j) +

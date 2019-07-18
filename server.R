@@ -12,6 +12,7 @@ library(tidyverse)
 library(glue)
 library(plotly)
 library(DT)
+library(naniar)
 
 ### Functions for reading in .csv's exported by Ion Analytics
 parse_IA <- function(file){
@@ -184,7 +185,7 @@ shinyServer(function(input, output, session) {
                             RT: {round(rt, 3)}
                             RT expected: {round(rt_exp, 3)}
                             Q Value: {round(q_val, 3)}"))) +
-        geom_point(alpha = 0.5, position = j) +
+        geom_miss_point(alpha = 0.5, position = j) +
         geom_errorbarh(aes(xmin = rt_dev_start, xmax = rt_dev_end, y = compound_trunc),
                        alpha = 0.4, height = 0, width = 0, position = j) +
         scale_color_viridis_c(option = "C") +
