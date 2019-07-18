@@ -185,11 +185,11 @@ shinyServer(function(input, output, session) {
                             RT: {round(rt, 3)}
                             RT expected: {round(rt_exp, 3)}
                             Q Value: {round(q_val, 3)}"))) +
-        geom_miss_point(alpha = 0.5, position = j) +
+        geom_miss_point(alpha = 0.5, position = j, prop_below = 0.05) +
         geom_errorbarh(aes(xmin = rt_dev_start, xmax = rt_dev_end, y = compound_trunc),
                        alpha = 0.4, height = 0, width = 0, position = j) +
         scale_color_viridis_c(option = "C") +
-        coord_cartesian(xlim = c(-0.5, 0.5)) +
+        coord_cartesian(xlim = c(-0.55, 0.5)) +
         labs(x = "deviation from expected RT", y = "(No.) Compound",
              color = "Q")
       ggplotly(p, tooltip = c("text")) %>% 
