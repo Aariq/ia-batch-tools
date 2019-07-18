@@ -173,7 +173,8 @@ shinyServer(function(input, output, session) {
     
     output$diagnostic_plot <- renderPlotly({
       j <- position_jitter(height = 0, width = 0.2)
-      p <- ggplot(diagnostic_df() %>%
+      rt_df <- diagnostic_df() #only do this once. Maybe speeds it up?
+      p <- ggplot(rt_df %>%
                     #only plot one page at a time
                     filter(page == input$page),
                   aes(y = rt_dev,
@@ -188,8 +189,8 @@ shinyServer(function(input, output, session) {
         geom_miss_point(alpha = 0.5, position = j, prop_below = 0.05) +
         geom_linerange(aes(ymin = rt_dev_start, ymax = rt_dev_end, x = compound_trunc),
                        alpha = 0.4, position = j) +
-        scale_color_viridis_c(option = "C", limits = c(min(diagnostic_df()$q_val, na.rm = TRUE),
-                                                       max(diagnostic_df()$q_val, na.rm = TRUE))) +
+        scale_color_viridis_c(option = "C", limits = c(min(rt_df$q_val, na.rm = TRUE),
+                                                       max(rt_df$q_val, na.rm = TRUE))) +
         coord_flip(ylim = c(-0.55, 0.5)) +
         labs(x = "deviation from expected RT", y = "(No.) Compound",
              color = "Q") +
