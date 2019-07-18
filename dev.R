@@ -102,7 +102,7 @@ ggplotly(p, tooltip = c("text")) %>%
 j <- position_jitter(height = 0, width = 0.2)
 p <- ggplot(data_cleaned %>%  
               #only plot one page at a time
-              filter(page == 5),
+              filter(page == 1),
             aes(y = rt_dev,
                 x = fct_inorder(compound_trunc),
                 color = q_val,
@@ -114,7 +114,8 @@ p <- ggplot(data_cleaned %>%
   geom_miss_point(alpha = 0.5, position = j) +
   geom_linerange(aes(ymin = rt_dev_start, ymax = rt_dev_end),
                  alpha = 0.4, position = j) +
-  scale_color_viridis_c(option = "C") +
+  scale_color_viridis_c(option = "C", limits = c(min(data_cleaned$q_val, na.rm = TRUE),
+                                                 max(data_cleaned$q_val, na.rm = TRUE))) +
   coord_flip(ylim = c(-0.5, 0.5)) +
   labs(x = "deviation from expected RT", y = "(No.) Compound",
        # title = "Compounds sorted by standard deviation of retention time",
