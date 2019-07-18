@@ -4,6 +4,7 @@ library(chemhelper)
 # library(ggstance)
 library(ggbeeswarm)
 library(plotly)
+library(naniar)
 
 data_dir <- ("/Users/scottericr/Documents/ia-batch-tools/testdir")
 data_dir
@@ -52,7 +53,7 @@ df <- data_raw %>%
   mutate(compound_trunc = glue("({no}) {str_trunc(compound, 15)}")) %>% 
   select(-type) #i don't know what the type column is even
 
-nperpage <- 20 #make input for this later?
+nperpage <- 5 #make input for this later?
 #figure out pages for plots
 lvls <-
   #get unique levels of compound number in order
@@ -64,15 +65,17 @@ data_cleaned <- full_join(df, lvls) %>%
   arrange(desc(rt_sd)) %>% 
   mutate(rownum = row_number())
 
+
+
 # View(data_cleaned)
-page = 5
+page = 6
 # diagnostic plot
 j <- position_jitter(height = 0.2, width = 0)
-p <- ggplot(data_cleaned %>%
+p <- ggplot(data_cleaned %>%  
               #only plot one page at a time
-              filter(page == page),
+              filter(page == 5),
             aes(x = rt_dev,
-                y = compound_trunc,
+                y = fct_inorder(compound_trunc),
                 color = q_val,
                 text = glue("File: {sample}
                             Compound: {compound_trunc}
@@ -88,8 +91,39 @@ p <- ggplot(data_cleaned %>%
   labs(x = "deviation from expected RT", y = "(No.) Compound",
        # title = "Compounds sorted by standard deviation of retention time",
        color = "Q")
+
 ggplotly(p, tooltip = c("text")) %>% 
   layout(xaxis = list(fixedrange = TRUE)) #only allow zooming and panning along y-axis
+
+
+
+
+#flipped plot
+j <- position_jitter(height = 0, width = 0.2)
+p <- ggplot(data_cleaned %>%  
+              #only plot one page at a time
+              filter(page == 5),
+            aes(y = rt_dev,
+                x = fct_inorder(compound_trunc),
+                color = q_val,
+                text = glue("File: {sample}
+                            Compound: {compound_trunc}
+                            RT: {round(rt, 3)}
+                            RT expected: {round(rt_exp, 3)}
+                            Q Value: {round(q_val, 3)}"))) +
+  geom_miss_point(alpha = 0.5, position = j) +
+  geom_linerange(aes(ymin = rt_dev_start, ymax = rt_dev_end),
+                 alpha = 0.4, position = j) +
+  scale_color_viridis_c(option = "C") +
+  coord_flip(ylim = c(-0.5, 0.5)) +
+  labs(x = "deviation from expected RT", y = "(No.) Compound",
+       # title = "Compounds sorted by standard deviation of retention time",
+       color = "Q")
+
+ggplotly(p, tooltip = c("text")) %>% 
+  layout(xaxis = list(fixedrange = TRUE)) #only allow zooming and panning along y-axis
+
+
 
 
 

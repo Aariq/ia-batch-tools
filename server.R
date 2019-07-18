@@ -172,12 +172,12 @@ shinyServer(function(input, output, session) {
       )
     
     output$diagnostic_plot <- renderPlotly({
-      j <- position_jitter(height = 0.2, width = 0)
+      j <- position_jitter(height = 0, width = 0.2)
       p <- ggplot(diagnostic_df() %>%
                     #only plot one page at a time
                     filter(page == input$page),
-                  aes(x = rt_dev,
-                      y = fct_inorder(compound_trunc),
+                  aes(y = rt_dev,
+                      x = fct_inorder(compound_trunc),
                       color = q_val,
                       key = rownum, #necessary for brush selection to work
                       text = glue("File: {sample}
@@ -186,10 +186,10 @@ shinyServer(function(input, output, session) {
                             RT expected: {round(rt_exp, 3)}
                             Q Value: {round(q_val, 3)}"))) +
         geom_miss_point(alpha = 0.5, position = j, prop_below = 0.05) +
-        geom_errorbarh(aes(xmin = rt_dev_start, xmax = rt_dev_end, y = compound_trunc),
-                       alpha = 0.4, height = 0, width = 0, position = j) +
+        geom_linerange(aes(ymin = rt_dev_start, ymax = rt_dev_end, x = compound_trunc),
+                       alpha = 0.4, position = j) +
         scale_color_viridis_c(option = "C") +
-        coord_cartesian(xlim = c(-0.55, 0.5)) +
+        coord_flip(ylim = c(-0.55, 0.5)) +
         labs(x = "deviation from expected RT", y = "(No.) Compound",
              color = "Q")
       ggplotly(p, tooltip = c("text")) %>% 
