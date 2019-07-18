@@ -189,12 +189,11 @@ shinyServer(function(input, output, session) {
         geom_miss_point(alpha = 0.5, position = j, prop_below = 0.05) +
         geom_linerange(aes(ymin = rt_dev_start, ymax = rt_dev_end, x = compound_trunc),
                        alpha = 0.4, position = j) +
-        scale_color_viridis_c(option = "C", limits = c(min(rt_df$q_val, na.rm = TRUE),
+        scale_color_viridis_c(option = "C", end = 0.95, limits = c(min(rt_df$q_val, na.rm = TRUE),
                                                        max(rt_df$q_val, na.rm = TRUE))) +
         coord_flip(ylim = c(-0.55, 0.5)) +
         labs(x = "deviation from expected RT", y = "(No.) Compound",
-             color = "Q") +
-        theme_dark()
+             color = "Q")
       ggplotly(p, tooltip = c("text")) %>% 
         layout(xaxis = list(fixedrange = TRUE))  #only allow zooming and panning along y-axis
     })
