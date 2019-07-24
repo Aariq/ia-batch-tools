@@ -276,7 +276,7 @@ shinyServer(function(input, output, session) {
   #TODO: Add import of ions from ion tab in method.  Then, look for match of any two(?) ions to further filter possible isomers.
   output$isomertable <- renderDataTable({
     #Find potential duplicate RTs
-    tol = 0.005 #tolerance in RT. Could make this a reactive input in the future.
+    tol = 0.001 #tolerance in RT. Could make this a reactive input in the future.
     diagnostic_df() %>% 
       arrange(sample, rt) %>% 
       mutate(rt_diff = rt - lag(rt), rt_diff2 = rt - lead(rt)) %>% 
