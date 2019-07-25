@@ -214,3 +214,6 @@ data_cleaned %>%
 
 
 
+
+# RI calculations
+

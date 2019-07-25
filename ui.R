@@ -67,7 +67,8 @@ shinyUI(fluidPage(sidebarLayout(
                 tabPanel("Q Value",
                          h2("Q-values Consistency"),
                          p("A heat map with sample on the x-axis, sorted by average Q-value [over all compounds] for that sample.  Compounds on the y-axis are arranged by mean Q-value for the compound.  Use to spot samples with missing peaks, samples with poor integration, and problematic samples."),
-                         plotlyOutput("qplot", height = "600px")),
+                         plotlyOutput("qplot", height = "600px"),
+                         DT::dataTableOutput("qtable")),
                 
                 tabPanel("Width",
                          h2("Peak Width Consistency"),

@@ -219,91 +219,97 @@ shinyServer(function(input, output, session) {
     )
     
     
-  output$qtable <- renderDataTable({
-    diagnostic_df() %>% 
-      select(sample, no, compound, q_val) %>%
-      group_by(compound) %>% 
-      mutate(`Mean Q Value` = mean(q_val, na.rm = TRUE)) %>% 
-      filter(!is.na(q_val)) #%>% 
-      # spread(key = compound, value = q_val) %>% 
-      # arrange(`Mean Q Value`)
-  })
-  
-  
-  output$qplot <- renderPlotly({
-    p <- diagnostic_df() %>% 
-      # select(sample, no, compound, q_val) %>% 
-      group_by(compound) %>% 
-      mutate(`Mean Q Value` = mean(q_val, na.rm = TRUE)) %>% 
-      filter(!is.na(q_val)) %>% 
-      ungroup() %>% 
-      mutate(sample = fct_reorder(sample, q_val),
-             compound_trunc = fct_reorder(compound_trunc, q_val)) %>% 
-      arrange(`Mean Q Value`) %>%  
-      # filter(`Mean Q Value` < 93) %>% #filter just to make there be fewer rows
-      ggplot(aes(x = sample, y = compound_trunc, fill = q_val)) +
-      geom_tile() +
-      scale_fill_viridis_c(option = "C") +
-      labs(x = "low <-- sample mean Q-value --> high",
-           y = "low <-- compound mean Q-value --> high") #+
+    output$qtable <- DT::renderDataTable({
+      diagnostic_df() %>% 
+        select(sample, no, compound, q_val) %>%
+        group_by(compound) %>% 
+        mutate(`Mean Q Value` = mean(q_val, na.rm = TRUE)) %>% 
+        filter(!is.na(q_val)) %>% 
+        spread(key = sample, value = q_val) %>%
+        arrange(`Mean Q Value`)
+    },
+    extensions = c("Buttons"), filter = "top",
+    options = list(
+      dom = "lBfrtip",
+      buttons = c("copy", "csv", "excel")
+    )
+    )
+    
+    
+    output$qplot <- renderPlotly({
+      p <- diagnostic_df() %>% 
+        # select(sample, no, compound, q_val) %>% 
+        group_by(compound) %>% 
+        mutate(`Mean Q Value` = mean(q_val, na.rm = TRUE)) %>% 
+        filter(!is.na(q_val)) %>% 
+        ungroup() %>% 
+        mutate(sample = fct_reorder(sample, q_val),
+               compound_trunc = fct_reorder(compound_trunc, q_val)) %>% 
+        arrange(`Mean Q Value`) %>%  
+        # filter(`Mean Q Value` < 93) %>% #filter just to make there be fewer rows
+        ggplot(aes(x = sample, y = compound_trunc, fill = q_val)) +
+        geom_tile() +
+        scale_fill_viridis_c(option = "C") +
+        labs(x = "low <-- sample mean Q-value --> high",
+             y = "low <-- compound mean Q-value --> high") #+
       # theme(axis.text.x = element_text(angle = 90))
       ggplotly(p) %>% 
         layout(xaxis = list(tickangle = -90,
                             fixedrange = TRUE))  #only allow zooming and panning along y-axis
-        
-  })
-  
-  output$widthtable <- DT::renderDataTable({
-    diagnostic_df() %>% 
-      mutate_if(is.double, ~ifelse(. == 0, NA, .)) %>% 
-      filter(!is.na(rt_window_end)) %>% 
-      mutate(width = rt_window_end - rt_window_st) %>% 
-      select(sample, no, compound, width) %>% 
-      group_by(compound) %>% 
-      mutate(mean_width = mean(width, na.rm = TRUE),
-             sd_width = sd(width, na.rm = TRUE)) %>% 
-      spread(key = sample, value = width) %>%
-      arrange(desc(sd_width), compound)
-  },    
-  # server = FALSE, #not good for large data
-  extensions = c("Buttons"),
-  options = list(
-    dom = "lBrtip",
-    buttons = c("copy", "csv", "excel")
+      
+    })
+    
+    output$widthtable <- DT::renderDataTable({
+      diagnostic_df() %>% 
+        mutate_if(is.double, ~ifelse(. == 0, NA, .)) %>% 
+        filter(!is.na(rt_window_end)) %>% 
+        mutate(width = rt_window_end - rt_window_st) %>% 
+        select(sample, no, compound, width) %>% 
+        group_by(compound) %>% 
+        mutate(mean_width = mean(width, na.rm = TRUE),
+               sd_width = sd(width, na.rm = TRUE)) %>% 
+        spread(key = sample, value = width) %>%
+        arrange(desc(sd_width), compound)
+    },    
+    # server = FALSE, #not good for large data
+    extensions = c("Buttons"),
+    options = list(
+      dom = "lBrtip",
+      buttons = c("copy", "csv", "excel")
     )
-  )
-
-  #TODO: Add import of ions from ion tab in method.  Then, look for match of any two(?) ions to further filter possible isomers.
-  output$isomertable <- renderDataTable({
-    #Find potential duplicate RTs
-    tol = 0.001 #tolerance in RT. Could make this a reactive input in the future.
-    diagnostic_df() %>% 
-      arrange(sample, rt) %>% 
-      mutate(rt_diff = rt - lag(rt), rt_diff2 = rt - lead(rt)) %>% 
-      mutate(compound2 = case_when(rt_diff < tol ~ lag(compound),
-                                   rt_diff2 > -tol ~ lead(compound)),
-             no2 = case_when(rt_diff < tol ~ lag(no),
-                             rt_diff2 > -tol ~ lead(no)),
-             main_ion2 = case_when(rt_diff < tol ~ lag(main_ion_m_z),
-                                   rt_diff2 > -tol ~ lead(main_ion_m_z)),
-             rt2 = case_when(rt_diff < tol ~ lag(rt),
-                             rt_diff2 > -tol ~ lead(rt)),
-             rt_exp2 = case_when(rt_diff < tol ~lag(rt_exp),
-                                 rt_diff2 > -tol ~lead(rt_exp))) %>% 
-      dplyr::filter(rt_diff < tol | rt_diff2 > -tol) %>%
-      select(sample, no, compound,"main ion (m/z)" = main_ion_m_z, "expected RT" = rt_exp, RT = rt, 
-             "no. 2" = no2, "compound 2" = compound2, "main ion 2" = main_ion2, "RT 2" = rt2,
-             "expected RT 2" = rt_exp2) %>%
-      arrange(RT) %>%
-      mutate_if(is.numeric, ~round(., 4))
-  },
-  # server = FALSE, #not good for large data
-  extensions = c("Buttons"), filter = "top",
-  options = list(
-    dom = "lBfrtip",
-    buttons = c("copy", "csv", "excel")
     )
-  )
-  
-
+    
+    #TODO: Add import of ions from ion tab in method.  Then, look for match of any two(?) ions to further filter possible isomers.
+    output$isomertable <- renderDataTable({
+      #Find potential duplicate RTs
+      tol = 0.001 #tolerance in RT. Could make this a reactive input in the future.
+      diagnostic_df() %>% 
+        arrange(sample, rt) %>% 
+        mutate(rt_diff = rt - lag(rt), rt_diff2 = rt - lead(rt)) %>% 
+        mutate(compound2 = case_when(rt_diff < tol ~ lag(compound),
+                                     rt_diff2 > -tol ~ lead(compound)),
+               no2 = case_when(rt_diff < tol ~ lag(no),
+                               rt_diff2 > -tol ~ lead(no)),
+               main_ion2 = case_when(rt_diff < tol ~ lag(main_ion_m_z),
+                                     rt_diff2 > -tol ~ lead(main_ion_m_z)),
+               rt2 = case_when(rt_diff < tol ~ lag(rt),
+                               rt_diff2 > -tol ~ lead(rt)),
+               rt_exp2 = case_when(rt_diff < tol ~lag(rt_exp),
+                                   rt_diff2 > -tol ~lead(rt_exp))) %>% 
+        dplyr::filter(rt_diff < tol | rt_diff2 > -tol) %>%
+        select(sample, no, compound,"main ion (m/z)" = main_ion_m_z, "expected RT" = rt_exp, RT = rt, 
+               "no. 2" = no2, "compound 2" = compound2, "main ion 2" = main_ion2, "RT 2" = rt2,
+               "expected RT 2" = rt_exp2) %>%
+        arrange(RT) %>%
+        mutate_if(is.numeric, ~round(., 4))
+    },
+    # server = FALSE, #not good for large data
+    extensions = c("Buttons"), filter = "top",
+    options = list(
+      dom = "lBfrtip",
+      buttons = c("copy", "csv", "excel")
+    )
+    )
+    
+    
 })
